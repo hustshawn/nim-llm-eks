@@ -10,3 +10,12 @@ resources:
     memory: '8Gi'
 statefulSet:
   enabled: false
+ingress:
+  enabled: true
+  className: nginx
+  annotations: {}
+  hosts:
+  - paths:
+    - path: /
+      pathType: ImplementationSpecific
+      serviceType: openai
