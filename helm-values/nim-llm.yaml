@@ -1,4 +1,5 @@
 image:
+  repository: nvcr.io/nim/meta/llama3-8b-instruct
   tag: latest
 model:
   ngcAPIKey: ${ngc_api_key}
@@ -9,7 +10,10 @@ resources:
     nvidia.com/gpu: 1
     memory: '8Gi'
 statefulSet:
-  enabled: false
+  enabled: true
+persistence:
+  enabled: true
+  existingClaim: nim-llm-pvc
 ingress:
   enabled: true
   className: nginx
