@@ -78,6 +78,8 @@ module "eks_blueprints_addons" {
     vpc-cni = {}
   }
 
+  enable_aws_efs_csi_driver = true
+
   #---------------------------------------
   # AWS Load Balancer Controller Add-on
   #---------------------------------------
@@ -150,8 +152,8 @@ module "eks_blueprints_addons" {
       namespace        = "nim"
       values = [
         templatefile(
-        "${path.module}/helm-values/nim-llm.yaml", {
-          ngc_api_key = var.ngc_api_key
+          "${path.module}/helm-values/nim-llm.yaml", {
+            ngc_api_key = var.ngc_api_key
         })
       ]
     }
