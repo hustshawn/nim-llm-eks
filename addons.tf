@@ -146,20 +146,68 @@ module "eks_blueprints_addons" {
   # helm chart values under ./helm-values/nim-llm.yaml
   #---------------------------------------
   helm_releases = {
-    "nim-llm" = {
-      chart            = "${path.module}/nim-llm"
-      create_namespace = true
-      namespace        = "nim"
+    "prometheus-adapter" = {
+      repository = "https://prometheus-community.github.io/helm-charts"
+      chart      = "prometheus-adapter"
+      namespace  = module.eks_blueprints_addons.kube_prometheus_stack.namespace
+      version    = "4.10.0"
       values = [
         templatefile(
-          "${path.module}/helm-values/nim-llm.yaml", {
-            ngc_api_key = var.ngc_api_key
-        })
+          "${path.module}/helm-values/prometheus-adapter.yaml", {}
+        )
       ]
     }
   }
-
 }
+
+#---------------------------------------------------------------
+# NIM LLM Helm Chart
+#---------------------------------------------------------------
+
+resource "null_resource" "download_nim_deploy" {
+  # This trigger ensures the script runs only when the file doesn't exist
+  triggers = {
+    script_executed = fileexists("${path.module}/nim-llm/Chart.yaml") ? "false" : "true"
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      if [ ! -d "${path.module}/nim-llm" ]; then
+        echo "Downloading nim-deploy repo ..."
+        TEMP_DIR=$(mktemp -d)
+        git clone https://github.com/NVIDIA/nim-deploy.git "$TEMP_DIR/nim-deploy"
+        cp -r "$TEMP_DIR/nim-deploy/helm/nim-llm" ${path.module}/nim-llm
+        rm -rf "$TEMP_DIR"
+        echo "Download completed."
+      else
+        echo "nim-llm directory already exists. Skipping download."
+      fi
+    EOT
+  }
+}
+
+resource "helm_release" "nim_llm" {
+  name             = "nim-llm"
+  chart            = "${path.module}/nim-llm"
+  create_namespace = true
+  namespace        = kubernetes_namespace.nim.metadata[0].name
+  timeout          = 360
+  wait             = false
+  values = [
+    templatefile(
+      "${path.module}/helm-values/nim-llm.yaml",
+      {
+        ngc_api_key = var.ngc_api_key
+        pvc_name    = kubernetes_persistent_volume_claim_v1.efs_pvc.metadata[0].name
+      }
+    )
+  ]
+
+  depends_on = [
+    null_resource.download_nim_deploy
+  ]
+}
+
 
 #---------------------------------------------------------------
 # Data on EKS Kubernetes Addons

@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# Download the nim-deploy repo
-echo "Downloading nim-deploy repo ..."
-TEMP_DIR=$(mktemp -d)
-git clone https://github.com/NVIDIA/nim-deploy.git "$TEMP_DIR/nim-deploy"
-cp -r "$TEMP_DIR/nim-deploy/helm/nim-llm" ./nim-llm
-rm -rf "$TEMP_DIR"
-
 echo "Initializing ..."
 
 # Initialize Terraform

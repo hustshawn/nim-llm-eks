@@ -47,10 +47,18 @@ resource "kubernetes_storage_class_v1" "efs" {
   ]
 }
 
+resource "kubernetes_namespace" "nim" {
+  metadata {
+    name = "nim"
+  }
+
+  depends_on = [module.eks]
+}
+
 resource "kubernetes_persistent_volume_claim_v1" "efs_pvc" {
   metadata {
     name      = "nim-llm-pvc"
-    namespace = "nim"
+    namespace = kubernetes_namespace.nim.metadata[0].name
   }
   spec {
     access_modes       = ["ReadWriteMany"]
